@@ -48,10 +48,18 @@ const parseExpression: Parser<string> = lazy(() => alt(
 
 const parseDoNotation = lazy(() => seq(
   string("do").skip(),
-  seq(
-    string("<|").skip(),
-    parseExpression,
-  ).map(([i]) => ["_", i]).some(),
+  alt(
+    seq(
+      string("<|").skip(),
+      parseExpression,
+    ).map(([i]) => ["_", i]).some(),
+    seq(
+      string("yield").skip(),
+      parseIdentifier,
+      string("=").skip(),
+      parseExpression,
+    ).map(([n, e]) => [n, e]),
+  ),
   string("end").skip(),
 ).map(([actions]) => {
   let code = ""
@@ -75,7 +83,7 @@ const parseLambdaExpression = lazy(() => seq(
     parseIdentifier.map(i => [i]),
   ),
   string("=>").skip(),
-  parsePrimitiveExpression,
+  parseExpression,
 ).map(([params, body]) => {
   let code = ``
   for (const p of params) {
@@ -444,9 +452,14 @@ const parseFloat = regex(/\d+\.\d+/).map(f => `__FLOAT(${f})`)
 
 const parseString = regex(/"[^"]*"/).map(s => `__STRING(${s})`)
 
+const parse = (input : string) => {
+  input = input.replace(/#.+/, "")
+  return parseStart.trim().parse(input)
+}
+
 const filename = process.argv[2]
 const text = readFileSync(filename, "utf-8")
-const result = parseStart.trim().parse(text)
+const result = parse(text)
 
 if (result.success) {
   writeFileSync(filename.split(".hsk")[0] + ".lua", result.value.toString())

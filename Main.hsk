@@ -1,14 +1,9 @@
 
-class Person(name, age)
-  def printInfo = println(`NAME: $name :: AGE: $age`)
+def complex(a) = block
+  def b = a + 5
+  def c = b - 2
+  def d = a + b + c
+  <| d * d
 end
 
-def main = block
-  def person = Person("Bob", 42)
-  <| person.printInfo
-end
-
-<| main # Output: 'NAME: Bob :: AGE: 42'
-
-
-
+<| println(complex(2)) # Output: 196

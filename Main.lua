@@ -290,17 +290,17 @@ function Cons(head)
   return function(tail)
     return setmetatable({
       _PLUS__PLUS_ = function(arr)
-        return Cons(head, __EAGER(tail)._PLUS__PLUS_(arr))
+        return Cons(head)(__EAGER(tail)._PLUS__PLUS_(arr))
       end,
       _LT__DOL__GT_ = function(f)
-        return Cons(__EAGER(f)(head), __EAGER(tail)._LT__DOL__GT_(f))
+        return Cons(__EAGER(f)(head))(__EAGER(tail)._LT__DOL__GT_(f))
       end,
       map = function(f)
-        return Cons(__EAGER(f)(head), __EAGER(tail)._LT__DOL__GT_(f))
+        return Cons(__EAGER(f)(head))(__EAGER(tail)._LT__DOL__GT_(f))
       end,
       filter = function(p)
         if __DEEP_EQ(__EAGER(p)(head), True) then
-          return Cons(head, tail.filter(p))
+          return Cons(head)(tail.filter(p))
         end
         return tail.filter(p)
       end,
@@ -410,34 +410,22 @@ local Random = {
     end
   end
 }
-local length
-length = function(list)
-  return (function(_SCRUTINEE_0)
-  local _CASES_1 = {}
-    if (_CASES_1[1] and _CASES_1[1][1] ~= 1) or #_CASES_1 == 0 and __DEEP_EQ(__EAGER(getmetatable(__EAGER(_SCRUTINEE_0)).__type), Nil) then
-      table.insert(_CASES_1, (function()
-        if __DEEP_EQ(True, True) then
-        return {1, __INT(0)}
-          else
-        return {0}
-        end
-      end)(table.unpack(getmetatable(__EAGER(_SCRUTINEE_0)).__args)))
-    end
-    if (_CASES_1[1] and _CASES_1[1][1] ~= 1) or #_CASES_1 == 0 and __DEEP_EQ(__EAGER(getmetatable(__EAGER(_SCRUTINEE_0)).__type), Cons) then
-      table.insert(_CASES_1, (function(x, xs)
-        if __DEEP_EQ(True, True) then
-        return {1, __EAGER(__EAGER(__INT(1))["_PLUS_"])(__EAGER(length)(__EAGER(xs)))}
-          else
-        return {0}
-        end
-      end)(table.unpack(getmetatable(__EAGER(_SCRUTINEE_0)).__args)))
-    end
-    for _, case in pairs(_CASES_1) do
-    if case[1] == 1 then
-      return case[2]
-    end
-  end
-  error("Non-exhaustive pattern match against '" .. tostring(_SCRUTINEE_0) .. "'.")
-end)(list)
+local complex
+complex = function(a)
+  return (function()
+    local b
+    b = __LAZY(function()
+      return __EAGER(__EAGER(a)["_PLUS_"])(__INT(5))
+    end)
+    local c
+    c = __LAZY(function()
+      return __EAGER(__EAGER(b)["_MINUS_"])(__INT(2))
+    end)
+    local d
+    d = __LAZY(function()
+      return __EAGER(__EAGER(__EAGER(a)["_PLUS_"])(b)["_PLUS_"])(c)
+    end)
+    return __EAGER(__EAGER(d)["_TIMES_"])(d)
+  end)()
 end
-__EVAL(__EAGER(__EAGER(println)(__EAGER(__EAGER(length)(__EAGER(__EAGER(__EAGER(List)["range"])(__EAGER(__INT(0)))(__EAGER(__INT(99)))(__EAGER(__INT(1)))))))))
+__EVAL(__EAGER(__EAGER(println)(__EAGER(__EAGER(complex)(__EAGER(__INT(2)))))))

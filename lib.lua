@@ -290,17 +290,17 @@ function Cons(head)
   return function(tail)
     return setmetatable({
       _PLUS__PLUS_ = function(arr)
-        return Cons(head, __EAGER(tail)._PLUS__PLUS_(arr))
+        return Cons(head)(__EAGER(tail)._PLUS__PLUS_(arr))
       end,
       _LT__DOL__GT_ = function(f)
-        return Cons(__EAGER(f)(head), __EAGER(tail)._LT__DOL__GT_(f))
+        return Cons(__EAGER(f)(head))(__EAGER(tail)._LT__DOL__GT_(f))
       end,
       map = function(f)
-        return Cons(__EAGER(f)(head), __EAGER(tail)._LT__DOL__GT_(f))
+        return Cons(__EAGER(f)(head))(__EAGER(tail)._LT__DOL__GT_(f))
       end,
       filter = function(p)
         if __DEEP_EQ(__EAGER(p)(head), True) then
-          return Cons(head, tail.filter(p))
+          return Cons(head)(tail.filter(p))
         end
         return tail.filter(p)
       end,
