@@ -1,0 +1,7 @@
+def compute(x) = x.repeat:
+  def num = 123
+  <| num
+end
+
+<| println(compute("A"))
+
