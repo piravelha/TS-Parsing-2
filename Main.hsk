@@ -1,7 +1,14 @@
 
-def length(list) = match list
-  case Nil => 0
-  case Cons(x, xs) => 1 + length(xs)
+class Person(name, age)
+  def printInfo = println(`NAME: $name :: AGE: $age`)
 end
 
-<| println(length(List.range(0, 99, 1)))
+def main = block
+  def person = Person("Bob", 42)
+  <| person.printInfo
+end
+
+<| main # Output: 'NAME: Bob :: AGE: 42'
+
+
+

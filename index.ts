@@ -25,6 +25,7 @@ const parseStatement = lazy(() => alt(
 const parseExpression: Parser<string> = lazy(() => alt(
   parseDoNotation,
   parseMatchExpression,
+  parseLambdaExpression,
   parsePrefixOp,
   parseOperatorCall,
   parseBlockCall,
@@ -65,6 +66,23 @@ const parseDoNotation = lazy(() => seq(
     + `(function(${name})\nreturn ${code}\nend)`
   }
     
+  return code
+}))
+
+const parseLambdaExpression = lazy(() => seq(
+  alt(
+    parseParameterList,
+    parseIdentifier.map(i => [i]),
+  ),
+  string("=>").skip(),
+  parsePrimitiveExpression,
+).map(([params, body]) => {
+  let code = ``
+  for (const p of params) {
+    code += `function(${p})\nreturn `
+  }
+  code += body
+  code += `\nend`.repeat(params.length)
   return code
 }))
 
@@ -301,6 +319,7 @@ const parseOperatorCall = lazy(() => seq(
 }))
 
 const parsePrimitiveExpression: Parser<string> = lazy(() => alt(
+  parseLambdaExpression,
   parseIdentifier,
   parseConstructor,
   parseInterpolatedString,
