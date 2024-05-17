@@ -31,7 +31,7 @@ export const keywords: string[] = [
   "end", "match",
   "case", "do",
   "yield", "@",
-  ":", "<|"
+  ":", "<|", "module",
 ]
 
 export const luaKeywords: string[] = [
@@ -90,9 +90,8 @@ export function matchCaseAux(
     return {
       ...pattern,
       name: pattern.value,
-      args: [],
       expr,
-    }
+    } as any
   }
 
   let result: Match | string = expr
@@ -104,7 +103,7 @@ export function matchCaseAux(
       let got = matchCaseAux(arg, result)
       result = {
         match: matchVar,
-        cases: [got],
+        cases: [got as any],
       }
       args.push(matchVar)
     } else {
@@ -144,10 +143,10 @@ export function fullMatchAux(
     let guard = c.guard
       ? c.guard
       : "True"
-    if (c.args) {
+    if ("args" in c) {
       code +=
-        `if __DEEP_EQ(__EAGER(`
-      + `getmetatable(__EAGER`
+        `if (${casesVar}[1] and ${casesVar}[1][1] ~= 1) or #${casesVar} == 0 and __DEEP_EQ(__EAGER(`
+      + `getmetatable(__EAGER(`
       + `${scrutinee})).__type), ${c.name}`
       + `) then\ntable.insert(${casesVar}, (function(`
       + `${c.args.join(", ")})\nif __DEEP_EQ(${guard}`
@@ -157,11 +156,12 @@ export function fullMatchAux(
       + `.__args)))\nend\n`
     } else {
       code +=
-        `table.insert(${casesVar}, (function(`
-      + `${c.name})\nif __DEEP_EQ(${guard}`
+        `if (${casesVar}[1] and ${casesVar}[1][1] ~= 1) or not ${casesVar}[1] then\n`
+      + `table.insert(${casesVar}, (function(`
+      + `${(c as any).name})\nif __DEEP_EQ(${guard}`
       + `, True) then\nreturn {1, ${expr}}\n`
       + `else\nreturn {0}\nend\nend)(`
-      + `${scrutinee})\n)`
+      + `${scrutinee})\n)\nend\n`
     }
   }
 

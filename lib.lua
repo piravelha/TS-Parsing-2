@@ -10,7 +10,7 @@ function __LAZY(f)
   }, {
     __tostring = function()
       local addr = tostring(f)
-      return "lazy: " .. addr:split(": ")[2]
+      return "lazy: (" .. addr .. ")"
     end,
   })
 end
@@ -37,7 +37,7 @@ function __DEEP_EQ(
 
   if type(tbl1) == "function"
   or type(tbl2) == "function" then
-    return true
+    return type(tbl1) == type(tbl2)
   end
 
   if type(tbl1) ~= "table"
@@ -72,6 +72,8 @@ function __DEEP_EQ(
 end
 
 local True
+local False
+
 True = __LAZY(function()
   return setmetatable({
     _PIPE__PIPE_ = function(b)
@@ -80,6 +82,9 @@ True = __LAZY(function()
     _AMP__AMP_ = function(b)
       return b
     end,
+    _not = __LAZY(function()
+      return False
+    end),
     ["~"] = true,
   }, {
     __tostring = function()
@@ -92,7 +97,6 @@ True = __LAZY(function()
   })
 end)
 
-local False
 False = __LAZY(function()
   return setmetatable({
     _PIPE__PIPE_ = function(b)
@@ -101,6 +105,9 @@ False = __LAZY(function()
     _AMP__AMP_ = function(b)
       return False
     end,
+    _not = __LAZY(function()
+      return True
+    end),
     ["~"] = false,
   }, {
     __tostring = function()
@@ -277,6 +284,82 @@ function __STRING(s)
   })
 end
 
+local Nil
+
+function Cons(head)
+  return function(tail)
+    return setmetatable({
+      _PLUS__PLUS_ = function(arr)
+        return Cons(head, __EAGER(tail)._PLUS__PLUS_(arr))
+      end,
+      _LT__DOL__GT_ = function(f)
+        return Cons(__EAGER(f)(head), __EAGER(tail)._LT__DOL__GT_(f))
+      end,
+      map = function(f)
+        return Cons(__EAGER(f)(head), __EAGER(tail)._LT__DOL__GT_(f))
+      end,
+      filter = function(p)
+        if __DEEP_EQ(__EAGER(p)(head), True) then
+          return Cons(head, tail.filter(p))
+        end
+        return tail.filter(p)
+      end,
+      ["~h"] = head,
+      ["~t"] = tail,
+    }, {
+      __tostring = function()
+        local str = tostring(__EAGER(tail))
+        if str == "[]" then
+          return "[" .. tostring(__EAGER(head)) .. "]"
+        end
+        return "[" .. tostring(__EAGER(head)) .. ", " .. str:sub(2)
+      end,
+      __type = Cons,
+      __args = {head, tail},
+    })
+  end
+end
+
+Nil = __LAZY(function()
+  return setmetatable({
+    _PLUS__PLUS = function(arr)
+      return arr
+    end,
+    _LT__DOL__GT_ = function(f)
+      return Nil
+    end,
+    map = function(f)
+      return Nil
+    end,
+    filter = function(p)
+      return Nil
+    end,
+  }, {
+    __tostring = function()
+      return "[]"
+    end,
+    __type = __LAZY(function()
+      return Nil
+    end),
+    __args = {},
+  })
+end)
+
+local List
+List = {
+  range = function(min)
+    return function(max)
+      return function(step)
+        local arr = Nil
+        for i = max["~"], min["~"], -step["~"] do
+          arr = Cons(__INT(i))(arr)
+        end
+        return arr
+      end
+    end
+  end
+}
+
 function __EVAL(io)
   return io["~"]()
 end
@@ -286,20 +369,20 @@ function IO(io)
     _GT__GT_ = function(x)
       return IO(function()
         io()
-        return x["~"]()
+        return __EAGER(x)["~"]()
       end)
     end,
     _GT__GT__EQ_ = function(x)
       return IO(function()
-        local result = x(io())
-        return result["~"]()
+        local result = __EAGER(x)(io())
+        return __EAGER(result)["~"]()
       end)
     end,
     ["~"] = io,
   }, {
     __tostring = function()
       local addr = tostring(io)
-      return "io: " .. addr:split(":")[2]
+      return "io: (" .. addr .. ")"
     end,
     __type = IO,
     __args = {io}
@@ -311,6 +394,10 @@ function println(...)
   return IO(function()
     print(table.unpack(args))
   end)
+end
+
+function show(obj)
+  return __STRING(tostring(obj))
 end
 
 local Random = {

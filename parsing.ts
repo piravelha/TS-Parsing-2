@@ -81,11 +81,14 @@ export class Parser<A> {
       }
     })
   }
-  some(): Parser<A[]> {
+  some(configs: SeqConfig = { skipSpaces: true }): Parser<A[]> {
     return new Parser((input, pos) => {
       const result = this.raw_parse(input, pos)
       if (!result.success) return result
-      const { value, rest } = result
+      let { value, rest } = result
+      if (configs.skipSpaces) {
+        rest = rest.trimStart()
+      }
       let difference = input.slice(
         0,
         input.length - result.rest.length
@@ -98,7 +101,7 @@ export class Parser<A> {
         }
         pos[1]++
       }
-      const results = this.some().raw_parse(rest, pos)
+      const results = this.some(configs).raw_parse(rest, pos)
       if (!results.success) return {
         ...result,
         value: [value],
@@ -109,9 +112,9 @@ export class Parser<A> {
       }
     })
   }
-  many(): Parser<A[]> {
+  many(configs: SeqConfig = { skipSpaces: true }): Parser<A[]> {
     return new Parser((input, pos) => {
-      const result = this.some().raw_parse(input, pos)
+      const result = this.some(configs).raw_parse(input, pos)
       if (!result.success) return {
         success: true,
         value: [],
@@ -187,12 +190,25 @@ type Seq<Ps extends any[], Acc extends any[] = []> =
     ? Head["shouldSkip"] extends true
       ? Seq<Tail, Acc>
       : Seq<Tail, [...Acc, X]>
-    : never
+    : Seq<Tail, Acc>
   : Parser<Acc>
 
-export function seq<Ps extends Parser<any>[]>(
+type SeqConfig = {
+  skipSpaces?: boolean
+}
+
+export function seq<Ps extends (SeqConfig | Parser<any>)[]>(
   ...ps: Ps
 ): Seq<Ps> {
+  let configs: SeqConfig = {
+    skipSpaces: true
+  } as any
+  let last = ps.slice(-1)[0]
+  if (last.constructor === Object) {
+    ps.pop()
+    configs = last as any
+  }
+
   return new Parser((input, pos) => {
     let untrimmed = input
 
@@ -206,11 +222,11 @@ export function seq<Ps extends Parser<any>[]>(
     let column = pos[1]
 
     for (const p of ps) {
-      const result = p.raw_parse(input, [line, column])
+      const result = (p as any).raw_parse(input, [line, column])
       if (!result.success) {
         return result
       }
-      if (!p.shouldSkip) results.value.push(result.value)
+      if (!(p as any).shouldSkip) results.value.push(result.value)
       let difference = input.slice(
         0,
         untrimmed.length - result.rest.length
@@ -225,7 +241,9 @@ export function seq<Ps extends Parser<any>[]>(
       }
       pos = [line, column]
       results.rest = result.rest
-      input = result.rest.trimStart()
+      if (configs.skipSpaces) {
+        input = result.rest.trimStart()
+      } else input = result.rest
       untrimmed = result.rest
     }
 

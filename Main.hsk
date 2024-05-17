@@ -1,7 +1,7 @@
-def compute(x) = x.repeat:
-  def num = 123
-  <| num
+
+def length(list) = match list
+  case Nil => 0
+  case Cons(x, xs) => 1 + length(xs)
 end
 
-<| println(compute("A"))
-
+<| println(length(List.range(0, 99, 1)))

@@ -16,6 +16,8 @@ const parseStart = lazy(() => seq(
 }))
 
 const parseStatement = lazy(() => alt(
+  parseModuleDeclaration,
+  parseClassDeclaration,
   parseVariableDeclaration,
   parseMethodDeclaration,
 ))
@@ -26,8 +28,11 @@ const parseExpression: Parser<string> = lazy(() => alt(
   parsePrefixOp,
   parseOperatorCall,
   parseBlockCall,
+  parseBlock,
   parseMethodCall,
   parsePropertyAccess,
+  parseInterpolatedString,
+  parseArray,
   parseString,
   parseIdentifier,
   parseFloat,
@@ -80,6 +85,21 @@ const parseBlockCall = lazy(() => seq(
 + `${ss.map(s => `${s}\n`).join("")}`
 + `return ${expr}\n`
 + `end)())`
+))
+
+const parseBlock = lazy(() => seq(
+  string("block").skip(),
+  parseStatement.many(),
+  seq(
+    string("<|").skip(),
+    parseExpression,
+  ).map(([e]) => e),
+  string("end").skip(),
+).map(([ss, expr]) =>
+  `(function()\n`
++ `${ss.map(s => `${s}\n`).join("")}`
++ `return ${expr}\n`
++ `end)()`
 ))
 
 const parseMatchExpression = lazy(() => seq(
@@ -143,11 +163,36 @@ const parsePattern: Parser<Pattern> = lazy(() => alt(
   } as const))
 ))
 
+const parseModuleDeclaration = lazy(() => seq(
+  string("module").skip(),
+  parseConstructor,
+  alt(
+    parseMethodDeclaration,
+    parseVariableDeclaration,
+    parseClassDeclaration,
+  ).many(),
+  string("end").skip(),
+).map(([name, methods]) => {
+  let methodNames: string[] = []
+  for (let m of methods) {
+    m = m.split("local ")[1]
+    m = m.split("\n")[0].trim()
+    methodNames.push(`${m} = ${m},\n`)
+  }
+  let code =
+    `local ${name}\n${name} = __LAZY(function()\n`
+  + `${methods.join("\n")}\nreturn {\n${methodNames.join("")}}\nend)`
+  return code
+}))
+
 const parseClassDeclaration = lazy(() => seq(
   string("class").skip(),
   parseConstructor,
   parseParameterList.opt([]),
-  parseMethodDeclaration.many(),
+  alt(
+    parseMethodDeclaration,
+    parseVariableDeclaration,
+  ).many(),
   string("end").skip(),
 ).map(([name, params, methods]) => {
   let methodNames: string[] = []
@@ -160,28 +205,73 @@ const parseClassDeclaration = lazy(() => seq(
   for (let p of params) {
     tostring += ` .. tostring(${p})`
   }
+  tostring += ` .. ")"`
   if (/\(" \.\. "\)"/.test(tostring)) {
     tostring = `"${name}"`
   }
+
   let code =
-    `local ${name}\n${name} = __LAZY(`
-  + `function(${params.join(", ")})\n`
-  + `${methods.map(m => `${m}\n`).join("")}`
+    `local ${name}\n${name} = __LAZY(function()\nreturn `
+
+  for (const p of params) {
+    code += `function(${p})\nreturn `
+  }
+
+  code +=
+    `(function()\n${methods.map(m => `${m}\n`).join("")}`
   + `return setmetatable({\n`
   + `${methodNames.join("\n")}}, {\n`
-  + `__tostring = function()\nreturn ${tostring}\nend,`
-  + `__type = __LAZY(function()\nreturn ${name}\nend)`
+  + `__tostring = function()\nreturn ${tostring}\nend,\n`
+  + `__type = __LAZY(function()\nreturn ${name}\nend),\n`
   + `__args = { ${params.join(", ")} },\n`
-  + `})\nend)`
+  + `})\nend)()`
+
+  code += `\nend`.repeat(params.length) + "\nend)"
 
   return code
 }))
+
+const parseInterpolatedString = lazy(() => seq(
+  string('`').skip(),
+  alt(
+    regex(/[^`$]+/),
+    alt(
+      seq(
+        string('$').skip(),
+        parseIdentifier.map(id => `tostring(__EAGER(${id}))`),
+        { skipSpaces: false },
+      ).map(([i]) => i),
+      seq(
+        string("${").skip(),
+        parseExpression.map(expr => `tostring(__EAGER(${expr}))`),
+        string("}").skip(),
+        { skipSpaces: false },
+      ).map(([i]) => i)
+    ),
+  ).many({ skipSpaces: false },),
+  string('`').skip()
+).map(([parts]) => {
+  const luaString = parts.map(part => {
+    if (part.startsWith('tostring')) {
+      return `%s`
+    } else {
+      return part
+    }
+  }).join('');
+  
+  const luaVariables = parts.filter(part => part.startsWith('tostring')).join(', ');
+
+  return `__STRING(("${luaString}"):format(${luaVariables}))`;
+}));
 
 const parsePropertyAccess = lazy(() => seq(
   parsePrimitiveExpression,
   seq(
     string(".").skip(),
-    parseIdentifier,
+    alt(
+      parseIdentifier,
+      parseConstructor,
+    ),
   ).map(([e]) => e).many()
 ).map(([name, props]) => {
   let code = name
@@ -193,17 +283,27 @@ const parsePropertyAccess = lazy(() => seq(
 
 const parseOperatorCall = lazy(() => seq(
   parsePrimitiveExpression,
-  parseIdentifier,
-  parsePrimitiveExpression,
-).map(([name, op, arg]) => 
-  `__EAGER(`
-+ `__EAGER(${name})`
-+ `["${op}"])`
-+ `(${arg})`
-))
+  seq(
+    parseIdentifier,
+    alt(
+      parseMethodCall,
+      parsePrimitiveExpression,
+    )
+  ).some(),
+).map(([name, args]) => {
+  let code = `__EAGER(${name})`
+  for (let [op, arg] of args) {
+    code += `["${op}"]`
+    code = `__EAGER(${code})`
+    code += `(${arg})`
+  }
+  return code
+}))
 
 const parsePrimitiveExpression: Parser<string> = lazy(() => alt(
   parseIdentifier,
+  parseConstructor,
+  parseInterpolatedString,
   parseFloat,
   parseInt,
   parseString,
@@ -216,12 +316,17 @@ const parsePrimitiveExpression: Parser<string> = lazy(() => alt(
 
 const parsePrefixOp = lazy(() => seq(
   regex(/@[a-z][a-zA-Z0-9]*/),
-  parsePrimitiveExpression,
+  alt(
+    parseMethodCall,
+    parsePrimitiveExpression,
+  ),
 ).map(([op, expr]) => `__EAGER(${expr})["${op.slice(1)}"]`))
 
 const parseMethodCall = lazy(() => seq(
   alt(
-    parseIdentifier
+    parsePropertyAccess,
+    parseIdentifier,
+    parseConstructor,
   ),
   parseArgumentList,
 ).map(([name, args]) => {
@@ -275,6 +380,23 @@ const parseVariableDeclaration = lazy(() => seq(
 + `${name} = __LAZY(function()\n`
 + `return ${value}\n`
 + `end)`))
+
+const parseArray = lazy(() => seq(
+  string("[").skip(),
+  parseExpression,
+  seq(
+    string(",").skip(),
+    parseExpression,
+  ).map(([e]) => e).many(),
+  string("]").skip(),
+).map(([head, tail]) => {
+  let elems = [head, ...tail]
+  let arr = "Nil"
+  for (let e of elems.reverse()) {
+    arr = `Cons(${e})(${arr})`
+  }
+  return arr
+}))
 
 const parseConstructor = regex(/[A-Z][a-zA-Z0-9]*/)
 
