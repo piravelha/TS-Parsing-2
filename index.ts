@@ -7,12 +7,19 @@ const parseStart = lazy(() => seq(
   seq(
     string("<|").skip(),
     parseExpression,
-  ).map(([e]) => `__EVAL(__EAGER(${e}))`),
+  ).map(([e]) => `__EVAL(__EAGER(${e}))`).opt(""),
 ).map(([ss, expr]) => {
-  const lib = readFileSync("lib.lua", "utf-8")
-  return lib + format([
+  let defs = []
+  let code = format([
     ...ss, expr
   ].join("\n"))
+  for (let line of code.split("\n")) {
+    if (/^local \w+/.test(line)) {
+      defs.push(line.split("local ")[1])
+    }
+  }
+  defs = defs.map(d => `${d} = ${d},\n`)
+  return code + `return {\n${defs.join("")}}`
 }))
 
 const parseStatement = lazy(() => alt(
@@ -52,18 +59,18 @@ const parseDoNotation = lazy(() => seq(
     seq(
       string("<|").skip(),
       parseExpression,
-    ).map(([i]) => ["_", i]).some(),
+    ).map(([i]) => ["_", i]),
     seq(
       string("yield").skip(),
       parseIdentifier,
       string("=").skip(),
       parseExpression,
     ).map(([n, e]) => [n, e]),
-  ),
+  ).some(),
   string("end").skip(),
 ).map(([actions]) => {
   let code = ""
-  for (let [name, expr] of actions.reverse()) {
+  for (let [name, expr] of actions.reverse() as any) {
     if (code === "") {
       code = expr
       continue
@@ -227,13 +234,22 @@ const parseClassDeclaration = lazy(() => seq(
     m = m.split("\n")[0].trim()
     methodNames.push(`${m} = ${m},\n`)
   }
-  let tostring = `"${name}("`
-  for (let p of params) {
-    tostring += ` .. tostring(${p})`
-  }
-  tostring += ` .. ")"`
-  if (/\(" \.\. "\)"/.test(tostring)) {
-    tostring = `"${name}"`
+  let tostring = ""
+  if (name === "Cons") {
+    tostring = `local str = tostring(tail)\nif str == "[]" then\nreturn "[" .. tostring(head) .. "]"\nend\nreturn "[" .. tostring(head) .. ", " .. str:sub(2)`
+  } else if (name === "Nil") {
+    tostring = `return "[]"`
+  } else {
+    tostring += `"${name}("`
+    for (let p of params) {
+      tostring += ` .. tostring(${p}) .. ", "`
+    }
+    if (params.length > 0) {
+      tostring = tostring.slice(0, -8) + ` .. ")"`
+    } else {
+      tostring = `"${name}"`
+    }
+    tostring = "return " + tostring
   }
 
   let code =
@@ -247,7 +263,7 @@ const parseClassDeclaration = lazy(() => seq(
     `(function()\n${methods.map(m => `${m}\n`).join("")}`
   + `return setmetatable({\n`
   + `${methodNames.join("\n")}}, {\n`
-  + `__tostring = function()\nreturn ${tostring}\nend,\n`
+  + `__tostring = function()\n${tostring}\nend,\n`
   + `__type = __LAZY(function()\nreturn ${name}\nend),\n`
   + `__args = { ${params.join(", ")} },\n`
   + `})\nend)()`
@@ -308,7 +324,10 @@ const parsePropertyAccess = lazy(() => seq(
 }))
 
 const parseOperatorCall = lazy(() => seq(
-  parsePrimitiveExpression,
+  alt(
+    parseMethodCall,
+    parsePrimitiveExpression,
+  ),
   seq(
     parseIdentifier,
     alt(
@@ -420,7 +439,7 @@ const parseArray = lazy(() => seq(
   let elems = [head, ...tail]
   let arr = "Nil"
   for (let e of elems.reverse()) {
-    arr = `Cons(${e})(${arr})`
+    arr = `__EAGER(Cons)(${e})(${arr})`
   }
   return arr
 }))
@@ -454,16 +473,22 @@ const parseString = regex(/"[^"]*"/).map(s => `__STRING(${s})`)
 
 const parse = (input : string) => {
   input = input.replace(/#.+/, "")
-  return parseStart.trim().parse(input)
+  let result = parseStart.trim().parse(input)
+  if (result.success) {
+  } else {
+    console.log(result.error)
+    throw new Error(`Parsing Error`)
+  }
+  let lib = readFileSync("lib.lua", "utf-8")
+  let haskLib = readFileSync("HaskLib.hsk", "utf-8")
+  let strHaskLib = parseStart.trim().parse(haskLib) as any
+  strHaskLib = strHaskLib.value.toString()
+  let newHaskLib: any = strHaskLib.substring(0, strHaskLib.lastIndexOf("return {"))
+  writeFileSync(filename.split(".hsk")[0] + ".lua", lib + newHaskLib + result.value.toString())
 }
 
 const filename = process.argv[2]
 const text = readFileSync(filename, "utf-8")
-const result = parse(text)
+parse(text)
 
-if (result.success) {
-  writeFileSync(filename.split(".hsk")[0] + ".lua", result.value.toString())
-} else {
-  console.log(result.error)
-  throw new Error(`Parsing Error`)
-}
+

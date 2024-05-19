@@ -64,10 +64,11 @@ export function format(code: string) {
   let newCode: string[] = []
 
   for (let line of code.split("\n")) {
+    let untrimmed = line
     line = line.trim()
     if (line.includes("end")) indentation--
     if (line.includes("}")) indentation--
-    if (/local [A-Z][a-zA-Z0-9]*/.test(line)) {
+    if (/^local [A-Z][a-zA-Z0-9]*/.test(untrimmed) && indentation == 0) {
       newCode = [line, ...newCode]
       continue
     }

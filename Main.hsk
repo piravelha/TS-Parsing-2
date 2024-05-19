@@ -1,9 +1,9 @@
 
-def complex(a) = block
-  def b = a + 5
-  def c = b - 2
-  def d = a + b + c
-  <| d * d
+def other = do
+  yield a = Some(2)
+  yield b = None
+  yield c = Some(5)
+  <| Maybe.pure(a + c + b)
 end
 
-<| println(complex(2)) # Output: 196
+<| println(other)

@@ -334,9 +334,6 @@ local Random = {
     end
   end
 }
-local Maybe
-local None
-local Some
 local List
 local Nil
 local Cons
@@ -344,181 +341,153 @@ Cons = __LAZY(function()
   return function(head)
     return function(tail)
       return (function()
-      local append
-    append = function(list)
-    return __EAGER(Cons)(__EAGER(head))(__EAGER(__EAGER(__EAGER(tail)["append"])(__EAGER(list))))
-  end
-  local _PLUS__PLUS_
-  _PLUS__PLUS_ = __LAZY(function()
-  return append
-end)
-local map
-map = function(f)
-  return __EAGER(Cons)(__EAGER(__EAGER(f)(__EAGER(head))))(__EAGER(__EAGER(__EAGER(tail)["map"])(__EAGER(f))))
-end
-local _LT__DOL__GT_
-_LT__DOL__GT_ = __LAZY(function()
-  return map
-end)
-local filter
-filter = function(p)
-  return (function(_SCRUTINEE_0)
-  local _CASES_1 = {}
-    if (_CASES_1[1] and _CASES_1[1][1] ~= 1) or #_CASES_1 == 0 and __DEEP_EQ(__EAGER(getmetatable(__EAGER(_SCRUTINEE_0)).__type), False) then
-      table.insert(_CASES_1, (function()
-        if __DEEP_EQ(True, True) then
-        return {1, __EAGER(__EAGER(tail)["filter"])(__EAGER(p))}
-          else
-        return {0}
+        local map
+        map = function(f)
+          return __EAGER(Cons)(__EAGER(__EAGER(f)(__EAGER(head))))(__EAGER(__EAGER(__EAGER(tail)["map"])(__EAGER(f))))
         end
-      end)(table.unpack(getmetatable(__EAGER(_SCRUTINEE_0)).__args)))
-    end
-    if (_CASES_1[1] and _CASES_1[1][1] ~= 1) or #_CASES_1 == 0 and __DEEP_EQ(__EAGER(getmetatable(__EAGER(_SCRUTINEE_0)).__type), True) then
-      table.insert(_CASES_1, (function()
-        if __DEEP_EQ(True, True) then
-        return {1, __EAGER(Cons)(__EAGER(head))(__EAGER(__EAGER(__EAGER(tail)["filter"])(__EAGER(p))))}
-          else
-        return {0}
-        end
-      end)(table.unpack(getmetatable(__EAGER(_SCRUTINEE_0)).__args)))
-    end
-    for _, case in pairs(_CASES_1) do
-    if case[1] == 1 then
-      return case[2]
-    end
+        local _LT__DOL__GT_
+        _LT__DOL__GT_ = __LAZY(function()
+          return map
+        end)
+        local filter
+        filter = function(p)
+          return (function(_SCRUTINEE_2)
+          local _CASES_3 = {}
+            if (_CASES_3[1] and _CASES_3[1][1] ~= 1) or #_CASES_3 == 0 and __DEEP_EQ(__EAGER(getmetatable(__EAGER(_SCRUTINEE_2)).__type), False) then
+              table.insert(_CASES_3, (function()
+                if __DEEP_EQ(True, True) then
+                return {1, __EAGER(__EAGER(tail)["filter"])(__EAGER(p))}
+                  else
+                return {0}
+                end
+              end)(table.unpack(getmetatable(__EAGER(_SCRUTINEE_2)).__args)))
+            end
+            if (_CASES_3[1] and _CASES_3[1][1] ~= 1) or #_CASES_3 == 0 and __DEEP_EQ(__EAGER(getmetatable(__EAGER(_SCRUTINEE_2)).__type), True) then
+              table.insert(_CASES_3, (function()
+                if __DEEP_EQ(True, True) then
+                return {1, __EAGER(Cons)(__EAGER(head))(__EAGER(__EAGER(__EAGER(tail)["filter"])(__EAGER(p))))}
+                  else
+                return {0}
+                end
+              end)(table.unpack(getmetatable(__EAGER(_SCRUTINEE_2)).__args)))
+            end
+            for _, case in pairs(_CASES_3) do
+            if case[1] == 1 then
+              return case[2]
+            end
+          end
+          error("Non-exhaustive pattern match against '" .. tostring(_SCRUTINEE_2) .. "'.")
+        end)(__EAGER(p)(__EAGER(head)))
+      end
+      local _LT__AMP__GT_
+      _LT__AMP__GT_ = __LAZY(function()
+        return filter
+      end)
+      local flatMap
+      flatMap = function(f)
+        return __EAGER(__EAGER(__EAGER(f)(__EAGER(head)))["_PLUS__PLUS_"])(__EAGER(__EAGER(tail)["flatMap"])(__EAGER(f)))
+      end
+      local _GT__GT__EQ_
+      _GT__GT__EQ_ = __LAZY(function()
+        return flatMap
+      end)
+      local sequence
+      sequence = function(list)
+        return list
+      end
+      local _GT__GT_
+      _GT__GT_ = __LAZY(function()
+        return list
+      end)
+      return setmetatable({
+        map = map,
+        
+        _LT__DOL__GT_ = _LT__DOL__GT_,
+        
+        filter = filter,
+        
+        _LT__AMP__GT_ = _LT__AMP__GT_,
+        
+        flatMap = flatMap,
+        
+        _GT__GT__EQ_ = _GT__GT__EQ_,
+        
+        sequence = sequence,
+        
+        _GT__GT_ = _GT__GT_,
+      }, {
+        __tostring = function()
+          return "Cons(" .. tostring(head) .. tostring(tail) .. ")"
+        end,
+        __type = __LAZY(function()
+          return Cons
+        end),
+      __args = { head, tail },
+      })
+    end)()
   end
-  error("Non-exhaustive pattern match against '" .. tostring(_SCRUTINEE_0) .. "'.")
-end)(__EAGER(p)(__EAGER(head)))
-end
-local _LT__AMP__GT_
-_LT__AMP__GT_ = __LAZY(function()
-  return filter
-end)
-local flatMap
-flatMap = function(f)
-  return __EAGER(__EAGER(__EAGER(f)(__EAGER(head)))["_PLUS__PLUS_"])(__EAGER(__EAGER(tail)["flatMap"])(__EAGER(f)))
-end
-local _GT__GT__EQ_
-_GT__GT__EQ_ = __LAZY(function()
-  return flatMap
-end)
-local sequence
-sequence = function(list)
-  return list
-end
-local _GT__GT_
-_GT__GT_ = __LAZY(function()
-  return list
-end)
-return setmetatable({
-append = append,
-
-_PLUS__PLUS_ = _PLUS__PLUS_,
-
-map = map,
-
-_LT__DOL__GT_ = _LT__DOL__GT_,
-
-filter = filter,
-
-_LT__AMP__GT_ = _LT__AMP__GT_,
-
-flatMap = flatMap,
-
-_GT__GT__EQ_ = _GT__GT__EQ_,
-
-sequence = sequence,
-
-_GT__GT_ = _GT__GT_,
-}, {
-  __tostring = function()
-    local str = tostring(tail)
-    if str == "[]" then
-      return "[" .. tostring(head) .. "]"
-    end
-    return "[" .. tostring(head) .. ", " .. str:sub(2)
-  end,
-  __type = __LAZY(function()
-    return Cons
-  end),
-__args = { head, tail },
-})
-end)()
-end
 end
 end)
 Nil = __LAZY(function()
   return (function()
-  local append
-append = function(list)
-  return list
-end
-local _PLUS__PLUS_
-_PLUS__PLUS_ = __LAZY(function()
-return append
-end)
-local map
-map = function(f)
-  return Nil
-end
-local _LT__DOL__GT_
-_LT__DOL__GT_ = __LAZY(function()
-  return map
-end)
-local filter
-filter = function(p)
-  return Nil
-end
-local _LT__AMP__GT_
-_LT__AMP__GT_ = __LAZY(function()
-  return filter
-end)
-local flatMap
-flatMap = function(f)
-  return Nil
-end
-local _GT__GT__EQ_
-_GT__GT__EQ_ = __LAZY(function()
-  return flatMap
-end)
-local sequence
-sequence = function(list)
-  return Nil
-end
-local _GT__GT_
-_GT__GT_ = __LAZY(function()
-  return list
-end)
-return setmetatable({
-append = append,
-
-_PLUS__PLUS_ = _PLUS__PLUS_,
-
-map = map,
-
-_LT__DOL__GT_ = _LT__DOL__GT_,
-
-filter = filter,
-
-_LT__AMP__GT_ = _LT__AMP__GT_,
-
-flatMap = flatMap,
-
-_GT__GT__EQ_ = _GT__GT__EQ_,
-
-sequence = sequence,
-
-_GT__GT_ = _GT__GT_,
-}, {
-  __tostring = function()
-    return "[]"
-  end,
-  __type = __LAZY(function()
-    return Nil
-  end),
-__args = {  },
-})
-end)()
+    local map
+    map = function(f)
+      return Nil
+    end
+    local _LT__DOL__GT_
+    _LT__DOL__GT_ = __LAZY(function()
+      return map
+    end)
+    local filter
+    filter = function(p)
+      return Nil
+    end
+    local _LT__AMP__GT_
+    _LT__AMP__GT_ = __LAZY(function()
+      return filter
+    end)
+    local flatMap
+    flatMap = function(f)
+      return Nil
+    end
+    local _GT__GT__EQ_
+    _GT__GT__EQ_ = __LAZY(function()
+      return flatMap
+    end)
+    local sequence
+    sequence = function(list)
+      return Nil
+    end
+    local _GT__GT_
+    _GT__GT_ = __LAZY(function()
+      return list
+    end)
+    return setmetatable({
+      map = map,
+      
+      _LT__DOL__GT_ = _LT__DOL__GT_,
+      
+      filter = filter,
+      
+      _LT__AMP__GT_ = _LT__AMP__GT_,
+      
+      flatMap = flatMap,
+      
+      _GT__GT__EQ_ = _GT__GT__EQ_,
+      
+      sequence = sequence,
+      
+      _GT__GT_ = _GT__GT_,
+    }, {
+      __tostring = function()
+        return "Nil"
+      end,
+      __type = __LAZY(function()
+        return Nil
+      end),
+    __args = {  },
+    })
+  end)()
 end)
 List = __LAZY(function()
   local pure
@@ -529,100 +498,105 @@ List = __LAZY(function()
     pure = pure,
   }
 end)
-Some = __LAZY(function()
-  return function(value)
-    return (function()
-      local map
-      map = function(f)
-        return __EAGER(Some)(__EAGER(__EAGER(f)(__EAGER(value))))
-      end
-      local _LT__DOL__GT_
-      _LT__DOL__GT_ = __LAZY(function()
-        return map
-      end)
-      local filter
-      filter = function(p)
-        return (function(_SCRUTINEE_2)
-        local _CASES_3 = {}
-          if (_CASES_3[1] and _CASES_3[1][1] ~= 1) or #_CASES_3 == 0 and __DEEP_EQ(__EAGER(getmetatable(__EAGER(_SCRUTINEE_2)).__type), False) then
-            table.insert(_CASES_3, (function()
-              if __DEEP_EQ(True, True) then
-              return {1, None}
-                else
-              return {0}
-              end
-            end)(table.unpack(getmetatable(__EAGER(_SCRUTINEE_2)).__args)))
-          end
-          if (_CASES_3[1] and _CASES_3[1][1] ~= 1) or #_CASES_3 == 0 and __DEEP_EQ(__EAGER(getmetatable(__EAGER(_SCRUTINEE_2)).__type), True) then
-            table.insert(_CASES_3, (function()
-              if __DEEP_EQ(True, True) then
-              return {1, __EAGER(Some)(__EAGER(value))}
-                else
-              return {0}
-              end
-            end)(table.unpack(getmetatable(__EAGER(_SCRUTINEE_2)).__args)))
-          end
-          for _, case in pairs(_CASES_3) do
-          if case[1] == 1 then
-            return case[2]
-          end
+local List
+local Nil
+local Cons
+Cons = __LAZY(function()
+  return function(head)
+    return function(tail)
+      return (function()
+        local map
+        map = function(f)
+          return __EAGER(Cons)(__EAGER(__EAGER(f)(__EAGER(head))))(__EAGER(__EAGER(__EAGER(tail)["map"])(__EAGER(f))))
         end
-        error("Non-exhaustive pattern match against '" .. tostring(_SCRUTINEE_2) .. "'.")
-      end)(__EAGER(p)(__EAGER(value)))
-    end
-    local _LT__AMP__GT_
-    _LT__AMP__GT_ = __LAZY(function()
-      return filter
-    end)
-    local flatMap
-    flatMap = function(f)
-      return __EAGER(f)(__EAGER(value))
-    end
-    local _GT__GT__EQ_
-    _GT__GT__EQ_ = __LAZY(function()
-      return flatMap
-    end)
-    local sequence
-    sequence = function(maybe)
-      return maybe
-    end
-    local _GT__GT_
-    _GT__GT_ = __LAZY(function()
-      return sequence
-    end)
-    return setmetatable({
-      map = map,
-      
-      _LT__DOL__GT_ = _LT__DOL__GT_,
-      
-      filter = filter,
-      
-      _LT__AMP__GT_ = _LT__AMP__GT_,
-      
-      flatMap = flatMap,
-      
-      _GT__GT__EQ_ = _GT__GT__EQ_,
-      
-      sequence = sequence,
-      
-      _GT__GT_ = _GT__GT_,
-    }, {
-      __tostring = function()
-        return "Some(" .. tostring(value) .. ")"
-      end,
-      __type = __LAZY(function()
-        return Some
-      end),
-    __args = { value },
-    })
-  end)()
+        local _LT__DOL__GT_
+        _LT__DOL__GT_ = __LAZY(function()
+          return map
+        end)
+        local filter
+        filter = function(p)
+          return (function(_SCRUTINEE_0)
+          local _CASES_1 = {}
+            if (_CASES_1[1] and _CASES_1[1][1] ~= 1) or #_CASES_1 == 0 and __DEEP_EQ(__EAGER(getmetatable(__EAGER(_SCRUTINEE_0)).__type), False) then
+              table.insert(_CASES_1, (function()
+                if __DEEP_EQ(True, True) then
+                return {1, __EAGER(__EAGER(tail)["filter"])(__EAGER(p))}
+                  else
+                return {0}
+                end
+              end)(table.unpack(getmetatable(__EAGER(_SCRUTINEE_0)).__args)))
+            end
+            if (_CASES_1[1] and _CASES_1[1][1] ~= 1) or #_CASES_1 == 0 and __DEEP_EQ(__EAGER(getmetatable(__EAGER(_SCRUTINEE_0)).__type), True) then
+              table.insert(_CASES_1, (function()
+                if __DEEP_EQ(True, True) then
+                return {1, __EAGER(Cons)(__EAGER(head))(__EAGER(__EAGER(__EAGER(tail)["filter"])(__EAGER(p))))}
+                  else
+                return {0}
+                end
+              end)(table.unpack(getmetatable(__EAGER(_SCRUTINEE_0)).__args)))
+            end
+            for _, case in pairs(_CASES_1) do
+            if case[1] == 1 then
+              return case[2]
+            end
+          end
+          error("Non-exhaustive pattern match against '" .. tostring(_SCRUTINEE_0) .. "'.")
+        end)(__EAGER(p)(__EAGER(head)))
+      end
+      local _LT__AMP__GT_
+      _LT__AMP__GT_ = __LAZY(function()
+        return filter
+      end)
+      local flatMap
+      flatMap = function(f)
+        return __EAGER(__EAGER(__EAGER(f)(__EAGER(head)))["_PLUS__PLUS_"])(__EAGER(__EAGER(tail)["flatMap"])(__EAGER(f)))
+      end
+      local _GT__GT__EQ_
+      _GT__GT__EQ_ = __LAZY(function()
+        return flatMap
+      end)
+      local sequence
+      sequence = function(list)
+        return list
+      end
+      local _GT__GT_
+      _GT__GT_ = __LAZY(function()
+        return list
+      end)
+      return setmetatable({
+        map = map,
+        
+        _LT__DOL__GT_ = _LT__DOL__GT_,
+        
+        filter = filter,
+        
+        _LT__AMP__GT_ = _LT__AMP__GT_,
+        
+        flatMap = flatMap,
+        
+        _GT__GT__EQ_ = _GT__GT__EQ_,
+        
+        sequence = sequence,
+        
+        _GT__GT_ = _GT__GT_,
+      }, {
+        __tostring = function()
+          return "Cons(" .. tostring(head) .. tostring(tail) .. ")"
+        end,
+        __type = __LAZY(function()
+          return Cons
+        end),
+      __args = { head, tail },
+      })
+    end)()
+  end
 end
 end)
-None = __LAZY(function()
+Nil = __LAZY(function()
   return (function()
     local map
     map = function(f)
-      return None
+      return Nil
     end
     local _LT__DOL__GT_
     _LT__DOL__GT_ = __LAZY(function()
@@ -630,7 +604,7 @@ None = __LAZY(function()
     end)
     local filter
     filter = function(p)
-      return None
+      return Nil
     end
     local _LT__AMP__GT_
     _LT__AMP__GT_ = __LAZY(function()
@@ -638,19 +612,19 @@ None = __LAZY(function()
     end)
     local flatMap
     flatMap = function(f)
-      return None
+      return Nil
     end
     local _GT__GT__EQ_
     _GT__GT__EQ_ = __LAZY(function()
       return flatMap
     end)
     local sequence
-    sequence = function(maybe)
-      return None
+    sequence = function(list)
+      return Nil
     end
     local _GT__GT_
     _GT__GT_ = __LAZY(function()
-      return sequence
+      return list
     end)
     return setmetatable({
       map = map,
@@ -670,34 +644,26 @@ None = __LAZY(function()
       _GT__GT_ = _GT__GT_,
     }, {
       __tostring = function()
-        return "None"
+        return "Nil"
       end,
       __type = __LAZY(function()
-        return None
+        return Nil
       end),
     __args = {  },
     })
   end)()
 end)
-Maybe = __LAZY(function()
+List = __LAZY(function()
   local pure
   pure = function(x)
-    return __EAGER(Some)(__EAGER(x))
+    return __EAGER(Cons)(x)(Nil)
   end
   return {
     pure = pure,
   }
 end)
-local other
-other = __LAZY(function()
-  return __EAGER(__EAGER(__EAGER(Some)(__EAGER(__INT(2))))["_GT__GT__EQ_"])(function(a)
-    return __EAGER(__EAGER(None)["_GT__GT__EQ_"])(function(b)
-      return __EAGER(__EAGER(__EAGER(Some)(__EAGER(__INT(5))))["_GT__GT__EQ_"])(function(c)
-        return __EAGER(__EAGER(Maybe)["pure"])(__EAGER(__EAGER(__EAGER(__EAGER(a)["_PLUS_"])(c)["_PLUS_"])(b)))
-      end)
-    end)
-  end)
-end)
-__EVAL(__EAGER(__EAGER(println)(__EAGER(other))))return {
-other = other,
+return {
+List = List,
+Nil = Nil,
+Cons = Cons,
 }

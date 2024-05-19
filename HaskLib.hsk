@@ -1,0 +1,62 @@
+
+class Cons(head, tail)
+  def append(list) = Cons(head, tail.append(list))
+  def ++ = append
+  def map(f) = Cons(f(head), tail.map(f))
+  def <$> = map
+  def filter(p) = match p(head)
+    case False => tail.filter(p)
+    case True => Cons(head, tail.filter(p))
+  end
+  def <&> = filter
+  def flatMap(f) = f(head) ++ tail.flatMap(f)
+  def >>= = flatMap
+  def sequence(list) = list
+  def >> = list
+end
+
+class Nil
+  def append(list) = list
+  def ++ = append
+  def map(f) = Nil
+  def <$> = map
+  def filter(p) = Nil
+  def <&> = filter
+  def flatMap(f) = Nil
+  def >>= = flatMap
+  def sequence(list) = Nil
+  def >> = list
+end
+
+module List
+  def pure(x) = [x]
+end
+
+class Some(value)
+  def map(f) = Some(f(value))
+  def <$> = map
+  def filter(p) = match p(value)
+    case False => None
+    case True => Some(value)
+  end
+  def <&> = filter
+  def flatMap(f) = f(value)
+  def >>= = flatMap
+  def sequence(maybe) = maybe
+  def >> = sequence
+end
+
+class None
+  def map(f) = None
+  def <$> = map
+  def filter(p) = None
+  def <&> = filter
+  def flatMap(f) = None
+  def >>= = flatMap
+  def sequence(maybe) = None
+  def >> = sequence
+end
+
+module Maybe
+  def pure(x) = Some(x)
+end
